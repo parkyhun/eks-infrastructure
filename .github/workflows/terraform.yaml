@@ -1,0 +1,34 @@
+  # CI/CD 파이프라인 생성 
+name: Terraform CI/CD
+
+on:                     
+  push:                 # on: push github 에 push 될 때 자동 실행 
+    branches:
+      - main            # main 브렌치에만 적용 
+    paths:              # 경로
+      - 'terraform/**'  #  terraform 폴더 변경시에만 실행
+  pull_request: 
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest                    # 우분투 최신 버전에서 실행 (github 에서 실행될때 빌려주는 서버)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.8.0
+
+      - name: Terraform Init                        # terraform 초기화
+        run: cd terraform && terraform init
+
+      - name: Terraform Plan                        # terraform 실행 전 계획 (변경 내용 미리보기)
+        run: cd terraform && terraform plan
+
+      - name: Terraform Apply (only on merge to main)      # terraform 실제 변경 적용 
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: cd terraform && terraform apply -auto-approve
